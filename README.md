@@ -32,6 +32,10 @@ fundamentally missing that feature.
 I may add additional markdown features to this add-on over time. Suggestions and
  code/feature additions are welcome. 
 
+## Privacy Policy ##
+
+This tool runs client side. No information is collected or shared by this tool.
+
 
 ## License ##
 
