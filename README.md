@@ -34,7 +34,7 @@ I may add additional markdown features to this add-on over time. Suggestions and
 
 ## Privacy Policy ##
 
-This tool runs client side. No information is collected or shared by this tool.
+This add-on runs client side. No information is collected or shared by this add-on.
 
 
 ## License ##
