@@ -181,8 +181,10 @@ function headingNumbers(add, headertype, enddot, markdown){
         }
       }
 
-      // If there is an existing header number, remove it first. 
-      element.replaceText(/^(#+\s)?(([0-9a-zA-Z\-])(\.[0-9a-zA-Z\-])*)\.?\s/, '');
+      // If there is an exsiting header number with out without a markdown hash, remove it.
+      // The first part of the regex looks for an existing markdown header hash mark
+      // Then it checks to see if there is an existing header number
+      element.replaceText('^(#+\\s)?([0-9a-zA-Z\\-])(\\.[0-9a-zA-Z\\-])*\\.?\\s', '');
       
       // If this is for markdown, then we need to add the hash prefix for each heading level.
       var mdhash = ["", "","","","","",""];
@@ -212,7 +214,10 @@ function headingNumbers(add, headertype, enddot, markdown){
       }
     } else {
       // Clear current header numbers
-      element.replaceText(/^(#+\s)?(([0-9a-zA-Z\-])(\.[0-9a-zA-Z\-])*)\.?\s/, '');
+      // If there is an exsiting header number with out without a markdown hash, remove it.
+      // The first part of the regex looks for an existing markdown header hash mark
+      // Then it checks to see if there is an existing header number
+      element.replaceText('^(#+\\s)?([0-9a-zA-Z\\-])(\\.[0-9a-zA-Z\\-])*\\.?\\s', '');
     }
   }
 }
