@@ -1,7 +1,7 @@
 // Written by Bret Jordan
 // https://github.com/jordan2175/gdoc-markdown-tools
 // Last updated 2019-09-27
-// Version 1.0.1
+// Version 1.0.2
 // Apache 2.0 License
 
 
