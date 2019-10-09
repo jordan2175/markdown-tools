@@ -1,7 +1,7 @@
 // Written by Bret Jordan
 // https://github.com/jordan2175/gdoc-markdown-tools
 // Last updated 2019-09-27
-// Version 1.0.2
+// Version 1.0.3
 // Apache 2.0 License
 
 
@@ -267,11 +267,11 @@ function addtoc(){
     var headerlevel = new RegExp(/Heading (\d)/).exec(type)[1];
 
     // We need to remove the hashes from our TOC text and TOC links 
-    text = text.replace(/^#*\s?/, '');
+    text = text.replace(/^#+\s/, '');
 
     // We need to clean up the TOC link text a bit
     textlink = text.toLowerCase();
-    textlink = textlink.replace(/([0-9a-zA-Z\-]\.?)+\s/, '');
+    textlink = textlink.replace(/^([0-9a-zA-Z\-])(\.[0-9a-zA-Z\-])*\.?\s/, '');
     textlink = textlink.replace(/\s+/g, '-');
    
     if (cursor) {
@@ -288,26 +288,46 @@ function addtoc(){
       } else if (headerlevel == 2) {
         toctextline = tocindentstyle[2] + '[' + text + '](#' + textlink + ')\n';
         var t = cursor.insertText(toctextline);
+        t.setFontSize(10);
+        t.setForegroundColor("#333333");
+        t.setBold(false);
+        t.setFontFamily("Consolas");
         var position = document.newPosition(t, toctextline.length);
         document.setCursor(position);
       } else if (headerlevel == 3) {
         toctextline = tocindentstyle[3] + '[' + text + '](#' + textlink + ')\n';
         var t = cursor.insertText(toctextline);
+        t.setFontSize(10);
+        t.setForegroundColor("#333333");
+        t.setBold(false);
+        t.setFontFamily("Consolas");
         var position = document.newPosition(t, toctextline.length);
         document.setCursor(position);
       } else if (headerlevel == 4) {
         toctextline = tocindentstyle[4] + '[' + text + '](#' + textlink + ')\n';
         var t = cursor.insertText(toctextline);
+        t.setFontSize(10);
+        t.setForegroundColor("#333333");
+        t.setBold(false);
+        t.setFontFamily("Consolas");
         var position = document.newPosition(t, toctextline.length);
         document.setCursor(position);
       } else if (headerlevel == 5) {
         toctextline = tocindentstyle[5] + '[' + text + '](#' + textlink + ')\n';
         var t = cursor.insertText(toctextline);
+        t.setFontSize(10);
+        t.setForegroundColor("#333333");
+        t.setBold(false);
+        t.setFontFamily("Consolas");
         var position = document.newPosition(t, toctextline.length);
         document.setCursor(position);
       } else if (headerlevel == 6) {
         toctextline = tocindentstyle[6] + '[' + text + '](#' + textlink + ')\n';
         var t = cursor.insertText(toctextline);
+        t.setFontSize(10);
+        t.setForegroundColor("#333333");
+        t.setBold(false);
+        t.setFontFamily("Consolas");
         var position = document.newPosition(t, toctextline.length);
         document.setCursor(position);
       }
