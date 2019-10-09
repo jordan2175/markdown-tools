@@ -1,7 +1,7 @@
 // Written by Bret Jordan
 // https://github.com/jordan2175/gdoc-markdown-tools
 // Last updated 2019-09-27
-// Version 1.0.3
+// Version 1.0.4
 // Apache 2.0 License
 
 
@@ -228,6 +228,14 @@ function headingNumbers(add, headertype, enddot, markdown){
 
 function addtoc(){
   var document = DocumentApp.getActiveDocument();
+  
+  // If the user has selected some text, then just skip this call to add a TOC. The TOC should go at the 
+  // unslected cursor location.
+  var selection = document.getSelection();
+  if (selection) {
+   return; 
+  }
+    
   var body = document.getBody();
   var cursor = document.getCursor();
   var paragraphs = document.getParagraphs();
