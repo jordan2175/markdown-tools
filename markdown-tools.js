@@ -1,7 +1,7 @@
 // Written by Bret Jordan
 // https://github.com/jordan2175/gdoc-markdown-tools
-// Last updated 2019-09-27
-// Version 1.0.4
+// Last updated 2019-10-16
+// Version 1.1.1
 // Apache 2.0 License
 
 
@@ -27,14 +27,26 @@ function onOpen(e) {
   .addItem('Clear Heading Numbers', 'clearHeadingNumbers')
   .addSeparator()
   .addItem('Table of Contents', 'addtoc')
+  .addSeparator()
+  .addItem('About', 'showAbout')
   .addToUi();
 }
 
 
+// ----------------------------------------
+// Run on install 
+// ----------------------------------------
 
 function onInstall(e) {
   onOpen(e);
 }
+
+
+
+// ----------------------------------------
+// Menu Functions
+// ----------------------------------------
+
 
 // #### 1.2.3
 function addMarkdownHeadingNumbers(){
@@ -105,8 +117,22 @@ function clearHeadingNumbers(){
 
 
 
+function showAbout() {
+  var template = HtmlService.createTemplateFromFile("AboutDialog");
+  var page = template
+              .evaluate()
+              .setSandboxMode(HtmlService.SandboxMode.IFRAME)
+              .setWidth(500)
+              .setHeight(210);
+  DocumentApp.getUi()
+      .showModalDialog(page, "About Markdown Tools");
+}
 
 
+
+// ----------------------------------------
+// Main Functions
+// ----------------------------------------
 
 
 // Header Types: 1=numbers, 2=lowercase letters, 3=uppercase letters

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <?!= HtmlService.createHtmlOutputFromFile("DialogStylesheet").getContent(); ?>
+  </head>
+  <body>
+    <div id="root">
+      <div class="block">
+        <span>
+          <a href="https://github.com/jordan2175/markdown-tools" target="_blank">Markdown Tools</a> is a simple Google Doc add-on which will add heading numbers to the normal headings/styles in a Google docs document. Optionally, it can add the heading numbers along with the markdown hash tags that are appropriate for each heading level. This tool can also create and add a markdown styled table of contents to the document where the cursor is currently located.
+        </span>
+      </div>
+      <div class="block">
+        <span>
+         
+         You can find out more about this add-on by visiting the <a href="https://github.com/jordan2175/markdown-tools" target="_blank">Markdown Tools</a> website. If you have any feature requests, or find any issues at all, please report them to the <a href="https://github.com/jordan2175/markdown-tools/issues">Issue Tracker</a>.
+        </span>
+      </div>
+      <div class="block">
+        <button id="dialog-close-button">Close</button>
+      </div>
+    </div>
+    <?!= HtmlService.createHtmlOutputFromFile("AboutDialogJavaScript").getContent(); ?>
+  </body>
+</html>

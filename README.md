@@ -1,8 +1,8 @@
-# gdoc-markdown-tools #
+# markdown-tools #
 
 ## Version ##
 
-1.0.4
+1.1.1
 
 
 ## Installation ##
@@ -32,9 +32,13 @@ fundamentally missing that feature.
 I may add additional markdown features to this add-on over time. Suggestions and
  code/feature additions are welcome. 
 
+
 ## Privacy Policy ##
 
-This add-on runs client side. No information is collected or shared by this add-on.
+This add-on runs client side. No information is collected or shared by this
+add-on. Using this add-on means granting access to the current open Google
+Docs document and allowing the add-on to look for headings and insert heading
+numbers and a table of contents. 
 
 
 ## License ##
