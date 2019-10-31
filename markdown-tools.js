@@ -1,7 +1,7 @@
 // Written by Bret Jordan
 // https://github.com/jordan2175/gdoc-markdown-tools
-// Last updated 2019-10-16
-// Version 1.0.5
+// Last updated 2019-10-31
+// Version 1.0.6
 // Apache 2.0 License
 
 
@@ -207,10 +207,14 @@ function headingNumbers(add, headertype, enddot, markdown){
         }
       }
 
-      // If there is an exsiting header number with out without a markdown hash, remove it.
-      // The first part of the regex looks for an existing markdown header hash mark
-      // Then it checks to see if there is an existing header number
-      element.replaceText('^(#+\\s)?([0-9a-zA-Z\\-])(\\.[0-9a-zA-Z\\-])*\\.?\\s', '');
+      // If there is an existing header number with out without a markdown hash, remove it.
+
+      // The first regex looks for an existing markdown header hash mark and heading number.
+      element.replaceText('^(#+\\s)?([(0-9)*\\-)(\\.[(0-9)*\\-])*\\.?\\s', '');
+
+      // The second regex looks for an existing markdown header hash mark and heading letter.
+      // I am doing it this way so in the future I can address the letters in a different way.
+      element.replaceText('^(#+\\s)?([a-zA-Z\\-])(\\.[a-zA-Z\\-])*\\.?\\s', '');
       
       // If this is for markdown, then we need to add the hash prefix for each heading level.
       var mdhash = ["", "","","","","",""];
@@ -240,10 +244,14 @@ function headingNumbers(add, headertype, enddot, markdown){
       }
     } else {
       // Clear current header numbers
-      // If there is an exsiting header number with out without a markdown hash, remove it.
-      // The first part of the regex looks for an existing markdown header hash mark
-      // Then it checks to see if there is an existing header number
-      element.replaceText('^(#+\\s)?([0-9a-zA-Z\\-])(\\.[0-9a-zA-Z\\-])*\\.?\\s', '');
+      // If there is an existing header number with out without a markdown hash, remove it.
+
+      // The first regex looks for an existing markdown header hash mark and heading number.
+      element.replaceText('^(#+\\s)?([(0-9)*\\-)(\\.[(0-9)*\\-])*\\.?\\s', '');
+
+      // The second regex looks for an existing markdown header hash mark and heading letter.
+      // I am doing it this way so in the future I can address the letters in a different way.
+      element.replaceText('^(#+\\s)?([a-zA-Z\\-])(\\.[a-zA-Z\\-])*\\.?\\s', '');
     }
   }
 }
