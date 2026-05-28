@@ -1,10 +1,10 @@
 // Written by Bret Jordan
-// https://github.com/jordan2175/gdoc-markdown-tools
-// Last updated 2019-10-31
-// Version 1.0.6
+// https://github.com/jordan2175/markdown-tools
+// Last updated 2025-05-27
+// Version 2.0 (V8 runtime compatible)
 // Apache 2.0 License
-
-
+ 
+// onOpen 
 function onOpen(e) {
   var ui = DocumentApp.getUi();
   ui.createAddonMenu()
@@ -22,7 +22,7 @@ function onOpen(e) {
               .addItem('a.b.c', 'addSimpleHeadingLower')
               .addItem('a.b.c.', 'addSimpleHeadingLowerDot')
               .addItem('A.B.C', 'addSimpleHeadingUpper')
-              .addItem('A.b.C.', 'addSimpleHeadingUpperDot')
+              .addItem('A.B.C.', 'addSimpleHeadingUpperDot')
              )
   .addItem('Clear Heading Numbers', 'clearHeadingNumbers')
   .addSeparator()
@@ -31,92 +31,59 @@ function onOpen(e) {
   .addItem('About', 'showAbout')
   .addToUi();
 }
-
-
+ 
+ 
 // ----------------------------------------
-// Run on install 
+// Run on install
 // ----------------------------------------
-
+ 
 function onInstall(e) {
   onOpen(e);
 }
-
-
-
+ 
+ 
+// ----------------------------------------
+// FIX: In V8, element.getHeading() returns an enum object, not a string.
+// Concatenating with '' now yields e.g. "HEADING1" instead of "Heading 1",
+// so the original /Heading \d/ regex never matched anything.
+// Solution: build a map from each enum value to a numeric level (1-6),
+// then compare with === instead of regex string matching.
+// ----------------------------------------
+ 
+function buildHeadingLevelMap() {
+  var ph = DocumentApp.ParagraphHeading;
+  var map = new Map();
+  map.set(ph.HEADING1, 1);
+  map.set(ph.HEADING2, 2);
+  map.set(ph.HEADING3, 3);
+  map.set(ph.HEADING4, 4);
+  map.set(ph.HEADING5, 5);
+  map.set(ph.HEADING6, 6);
+  return map;
+}
+ 
+ 
 // ----------------------------------------
 // Menu Functions
 // ----------------------------------------
-
-
-// #### 1.2.3
-function addMarkdownHeadingNumbers(){
-  headingNumbers(true, 1, false, true);
-}
-
-// ### 1.2.3.
-function addMarkdownHeadingNumbersDot(){
-  headingNumbers(true, 1, true, true);
-}
-
-// #### a.b.c
-function addMarkdownHeadingLower(){
-  headingNumbers(true, 2, false, true);
-}
-
-// ### a.b.c.
-function addMarkdownHeadingLowerDot(){
-  headingNumbers(true, 2, true, true);
-}
-
-// #### A.B.C
-function addMarkdownHeadingUpper(){
-  headingNumbers(true, 3, false, true);
-}
-
-// ### A.B.C.
-function addMarkdownHeadingUpperDot(){
-  headingNumbers(true, 3, true, true);
-}
-
-
-// 1.2.3
-function addSimpleHeadingNumbers(){
-  headingNumbers(true, 1, false, false);
-}
-
-// 1.2.3.
-function addSimpleHeadingNumbersDot(){
-  headingNumbers(true, 1, true, false);
-}
-
-// a.b.c
-function addSimpleHeadingLower(){
-  headingNumbers(true, 2, false, false);
-}
-
-// a.b.c.
-function addSimpleHeadingLowerDot(){
-  headingNumbers(true, 2, true, false);
-}
-
-// a.b.c
-function addSimpleHeadingUpper(){
-  headingNumbers(true, 3, false, false);
-}
-
-// a.b.c.
-function addSimpleHeadingUpperDot(){
-  headingNumbers(true, 3, true, false);
-}
-
-
-// Clear all heading numbers
-function clearHeadingNumbers(){
-  headingNumbers(false, 0, false, false);
-}
-
-
-
+ 
+function addMarkdownHeadingNumbers()    { headingNumbers(true,  1, false, true);  }
+function addMarkdownHeadingNumbersDot() { headingNumbers(true,  1, true,  true);  }
+function addMarkdownHeadingLower()      { headingNumbers(true,  2, false, true);  }
+function addMarkdownHeadingLowerDot()   { headingNumbers(true,  2, true,  true);  }
+function addMarkdownHeadingUpper()      { headingNumbers(true,  3, false, true);  }
+function addMarkdownHeadingUpperDot()   { headingNumbers(true,  3, true,  true);  }
+ 
+function addSimpleHeadingNumbers()      { headingNumbers(true,  1, false, false); }
+function addSimpleHeadingNumbersDot()   { headingNumbers(true,  1, true,  false); }
+function addSimpleHeadingLower()        { headingNumbers(true,  2, false, false); }
+function addSimpleHeadingLowerDot()     { headingNumbers(true,  2, true,  false); }
+function addSimpleHeadingUpper()        { headingNumbers(true,  3, false, false); }
+function addSimpleHeadingUpperDot()     { headingNumbers(true,  3, true,  false); }
+ 
+function clearHeadingNumbers()          { headingNumbers(false, 0, false, false); }
+ 
+ 
 function showAbout() {
   var template = HtmlService.createTemplateFromFile("AboutDialog");
   var page = template
@@ -127,271 +94,170 @@ function showAbout() {
   DocumentApp.getUi()
       .showModalDialog(page, "About Markdown Tools");
 }
-
-
-
+ 
+ 
 // ----------------------------------------
 // Main Functions
 // ----------------------------------------
-
-
+ 
 // Header Types: 1=numbers, 2=lowercase letters, 3=uppercase letters
-function headingNumbers(add, headertype, enddot, markdown){
-  var document = DocumentApp.getActiveDocument();
-  var body = document.getBody();
-  var paragraphs = document.getParagraphs();
-  
-  // This array of numbers will increment as we encounter new headings and thus keep 
-  // the state of where we are at.  This is how the code knows which number is next.
-  var numbers = [0,0,0,0,0,0,0];
-  
-  // Loop through all of the paragraphs that we have found
-  for (var i in paragraphs) {
-    var element = paragraphs[i];
-    var text = element.getText()+'';
-    var type = element.getHeading()+'';
-    
-    // exclude everything but headings
-    if (!type.match(/Heading \d/)) {
-      continue;
-    }
-    
+function headingNumbers(add, headertype, enddot, markdown) {
+  var document   = DocumentApp.getActiveDocument();
+  var body       = document.getBody();
+  var paragraphs = body.getParagraphs();  // FIX: was document.getParagraphs()
+  var levelMap   = buildHeadingLevelMap(); // FIX: replaces string-based heading detection
+ 
+  var numbers = [0, 0, 0, 0, 0, 0, 0];
+ 
+  for (var i = 0; i < paragraphs.length; i++) {
+    var element     = paragraphs[i];
+    var text        = element.getText();
+    var headingEnum = element.getHeading(); // returns enum, not string
+ 
+    // FIX: compare enum value directly instead of regex on string representation
+    var headerlevel = levelMap.get(headingEnum);
+    if (!headerlevel) continue; // not a heading
+ 
     // exclude empty headings (e.g. page breaks generate these)
-    if( text.match(/^\s*$/)){
-      continue;
-    }
-
-    if (add == true) {
-      // Get the current header level (e.g., 1, 2, 3, 4, 5, 6)
-      var headerlevel = new RegExp(/Heading (\d)/).exec(type)[1];
-      
-      // This string will hold the actual header numbering value, be it integers or letters
+    if (text.match(/^\s*$/)) continue;
+ 
+    if (add) {
       var numbering = '';
-      
-      // Increment the heading number in the array. This will enable us to know 
-      // where we are at in the numbering.
       numbers[headerlevel]++;
-      
-      // Loop through all 6 possible levels and concatinate them in to a single string
-      // Check for the type level and as needed, convert the numbers array in to strings
-      // either numerical strings or letters.
+ 
       for (var level = 1; level <= 6; level++) {
         if (level < headerlevel) {
-          if (headertype == 1) {
-            numbering += numbers[level] + '.';
-          } else if (headertype == 2) {
-            numbering += int2lower(numbers[level]) + ".";
-          } else if (headertype == 3) {
-            numbering += int2upper(numbers[level]) + ".";
-          }
-        } else if (level == headerlevel) {
+          if      (headertype === 1) { numbering += numbers[level] + '.'; }
+          else if (headertype === 2) { numbering += int2lower(numbers[level]) + '.'; }
+          else if (headertype === 3) { numbering += int2upper(numbers[level]) + '.'; }
+        } else if (level === headerlevel) {
           if (enddot) {
-            if (headertype == 1) {
-              numbering += numbers[level] + '.';
-            } else if (headertype == 2) {
-              numbering += int2lower(numbers[level]) + ".";
-            } else if (headertype == 3) {
-              numbering += int2upper(numbers[level]) + ".";
-            }
+            if      (headertype === 1) { numbering += numbers[level] + '.'; }
+            else if (headertype === 2) { numbering += int2lower(numbers[level]) + '.'; }
+            else if (headertype === 3) { numbering += int2upper(numbers[level]) + '.'; }
           } else {
-            if (headertype == 1) {
-              numbering += numbers[level];
-            } else if (headertype == 2) {
-              numbering += int2lower(numbers[level]);
-            } else if (headertype == 3) {
-              numbering += int2upper(numbers[level]);
-            }
+            if      (headertype === 1) { numbering += numbers[level]; }
+            else if (headertype === 2) { numbering += int2lower(numbers[level]); }
+            else if (headertype === 3) { numbering += int2upper(numbers[level]); }
           }
         } else {
           numbers[level] = 0;
         }
       }
-
-      // If there is an existing header number with out without a markdown hash, remove it.
-
-      // The first regex looks for an existing markdown header hash mark and heading number.
-      element.replaceText('^(#+\\s)?([(0-9)*\\-)(\\.[(0-9)*\\-])*\\.?\\s', '');
-
-      // The second regex looks for an existing markdown header hash mark and heading letter.
-      // I am doing it this way so in the future I can address the letters in a different way.
-      element.replaceText('^(#+\\s)?([a-zA-Z\\-])(\\.[a-zA-Z\\-])*\\.?\\s', '');
-      
-      // If this is for markdown, then we need to add the hash prefix for each heading level.
-      var mdhash = ["", "","","","","",""];
-      if (markdown == true) {
-        mdhash = ["", "# ","## ","### ","#### ","##### ","###### "];
+ 
+      // FIX: replaceText() in V8 uses the RE2 engine (not Java regex).
+      // The original character class syntax [(0-9)*\-] was malformed and
+      // relied on Java regex leniency. Rewritten as clean RE2-compatible patterns.
+ 
+      // Remove existing heading number (with or without leading markdown hashes)
+      element.replaceText('^(#+ )?[0-9]+([.][0-9]+)*[.]? ', '');
+      // Remove existing heading letter (with or without leading markdown hashes)
+      element.replaceText('^(#+ )?[a-zA-Z]([.][a-zA-Z])*[.]? ', '');
+ 
+      var mdhash = ["", "", "", "", "", "", ""];
+      if (markdown) {
+        mdhash = ["", "# ", "## ", "### ", "#### ", "##### ", "###### "];
       }
  
-      // Check each heading level and set the right numbers and apply the right style 
-      if (headerlevel == 1) {
-        element.insertText(0, mdhash[1] + numbering + ' ');
-        element.setHeading(DocumentApp.ParagraphHeading.HEADING1);
-      } else if (headerlevel == 2) {
-        element.insertText(0, mdhash[2] + numbering + ' ');
-        element.setHeading(DocumentApp.ParagraphHeading.HEADING2);
-      } else if (headerlevel == 3) {
-        element.insertText(0, mdhash[3] + numbering + ' ');
-        element.setHeading(DocumentApp.ParagraphHeading.HEADING3);
-      } else if (headerlevel == 4) {
-        element.insertText(0, mdhash[4] + numbering + ' ');
-        element.setHeading(DocumentApp.ParagraphHeading.HEADING4);
-      } else if (headerlevel == 5) {
-        element.insertText(0, mdhash[5] + numbering + ' ');
-        element.setHeading(DocumentApp.ParagraphHeading.HEADING5);
-      } else if (headerlevel == 6) {
-        element.insertText(0, mdhash[6] + numbering + ' ');
-        element.setHeading(DocumentApp.ParagraphHeading.HEADING6);
-      }
+      var headingConst = [
+        null,
+        DocumentApp.ParagraphHeading.HEADING1,
+        DocumentApp.ParagraphHeading.HEADING2,
+        DocumentApp.ParagraphHeading.HEADING3,
+        DocumentApp.ParagraphHeading.HEADING4,
+        DocumentApp.ParagraphHeading.HEADING5,
+        DocumentApp.ParagraphHeading.HEADING6
+      ];
+ 
+      element.insertText(0, mdhash[headerlevel] + numbering + ' ');
+      element.setHeading(headingConst[headerlevel]);
+ 
     } else {
-      // Clear current header numbers
-      // If there is an existing header number with out without a markdown hash, remove it.
-
-      // The first regex looks for an existing markdown header hash mark and heading number.
-      element.replaceText('^(#+\\s)?([(0-9)*\\-)(\\.[(0-9)*\\-])*\\.?\\s', '');
-
-      // The second regex looks for an existing markdown header hash mark and heading letter.
-      // I am doing it this way so in the future I can address the letters in a different way.
-      element.replaceText('^(#+\\s)?([a-zA-Z\\-])(\\.[a-zA-Z\\-])*\\.?\\s', '');
+      // Clear mode: remove existing heading numbers/letters
+      element.replaceText('^(#+ )?[0-9]+([.][0-9]+)*[.]? ', '');
+      element.replaceText('^(#+ )?[a-zA-Z]([.][a-zA-Z])*[.]? ', '');
     }
   }
 }
-
-
-
-
-
-function addtoc(){
-  var document = DocumentApp.getActiveDocument();
-  
-  // If the user has selected some text, then just skip this call to add a TOC. The TOC should go at the 
-  // unslected cursor location.
+ 
+ 
+function addtoc() {
+  var document  = DocumentApp.getActiveDocument();
   var selection = document.getSelection();
-  if (selection) {
-   return; 
+  if (selection) return; // TOC goes at cursor, not selection
+ 
+  var body       = document.getBody();
+  var cursor     = document.getCursor();
+  var paragraphs = body.getParagraphs(); // FIX: was document.getParagraphs()
+  var levelMap   = buildHeadingLevelMap(); // FIX: replaces string-based heading detection
+ 
+  var h1data = body.getHeadingAttributes(DocumentApp.ParagraphHeading.HEADING1);
+ 
+  var tocindentstyle = ["", "- ", "  * ", "    + ", "      - ", "        * ", "          + "];
+ 
+  // FIX: cursor.insertText() walk no longer works reliably in V8.
+  // Find the body-child index of the cursor's paragraph, then use
+  // body.insertParagraph(index, text) to insert each TOC line in order.
+  var cursorElement = cursor.getElement();
+  while (cursorElement.getParent() &&
+         cursorElement.getParent().getType() !== DocumentApp.ElementType.BODY_SECTION) {
+    cursorElement = cursorElement.getParent();
   }
-    
-  var body = document.getBody();
-  var cursor = document.getCursor();
-  var paragraphs = document.getParagraphs();
-  
-  h1data = body.getHeadingAttributes(DocumentApp.ParagraphHeading.HEADING1);
-  
-  // The markdown toc indentation and prefix elements for each of the 6 heading levels.
-  var tocindentstyle = ["", "- ","  * ","    + ","      - ","        * ","          + "];
-  
-  tocheadertext = "# Table of Contents\n";
-  var c1 = cursor.insertText(tocheadertext);
-  //c1.setFontSize(h1data{'FONT_SIZE'});
-  //c1.setBold(h1data{'bold'});
-  //c1.setForegroundColor(h1data{'FOREGROUND_COLOR'});
-  c1.setAttributes(h1data)
-  var position = document.newPosition(c1, tocheadertext.length);
-  document.setCursor(position);
-  
-  
-  // Loop through all of the paragraphs that we have found
-  for (var i in paragraphs) {
-    var element = paragraphs[i];
-    var text = element.getText()+'';
-    var type = element.getHeading()+'';
-    
-    // exclude everything but headings
-    if (!type.match(/Heading \d/)) {
-      continue;
-    }
-    
-    // exclude empty headings (e.g. page breaks generate these)
-    if( text.match(/^\s*$/)){
-      continue;
-    }
-
-    // Get the current header level (e.g., 1, 2, 3, 4, 5, 6)
-    var headerlevel = new RegExp(/Heading (\d)/).exec(type)[1];
-
-    // We need to remove the hashes from our TOC text and TOC links 
-    text = text.replace(/^#+\s/, '');
-
-    // We need to clean up the TOC link text a bit
-    textlink = text.toLowerCase();
-    textlink = textlink.replace(/^([0-9a-zA-Z\-])(\.[0-9a-zA-Z\-])*\.?\s/, '');
+  var insertIndex = body.getChildIndex(cursorElement);
+ 
+  // Insert TOC header
+  var tocHeader = body.insertParagraph(insertIndex, '# Table of Contents');
+  tocHeader.setHeading(DocumentApp.ParagraphHeading.HEADING1);
+  tocHeader.setAttributes(h1data);
+  insertIndex++;
+ 
+  for (var i = 0; i < paragraphs.length; i++) {
+    var element     = paragraphs[i];
+    var text        = element.getText();
+    var headingEnum = element.getHeading();
+ 
+    // FIX: use enum map instead of string regex
+    var headerlevel = levelMap.get(headingEnum);
+    if (!headerlevel) continue;
+    if (text.match(/^\s*$/)) continue;
+ 
+    // Strip leading markdown hashes from display text
+    text = text.replace(/^#+ /, '');
+ 
+    // Build anchor: strip heading numbers/letters, lowercase, hyphens for spaces
+    var textlink = text.toLowerCase();
+    textlink = textlink.replace(/^[0-9a-zA-Z]([.][0-9a-zA-Z])*[.]? /, '');
     textlink = textlink.replace(/\s+/g, '-');
-   
-    if (cursor) {
-      // Check each heading level and set the right indentation for the toc 
-      if (headerlevel == 1) {
-        toctextline = tocindentstyle[1] + '[' + text + '](#' + textlink + ')\n';
-        var t = cursor.insertText(toctextline);
-        t.setFontSize(10);
-        t.setForegroundColor("#333333");
-        t.setBold(false);
-        t.setFontFamily("Consolas");
-        var position = document.newPosition(t, toctextline.length);
-        document.setCursor(position);
-      } else if (headerlevel == 2) {
-        toctextline = tocindentstyle[2] + '[' + text + '](#' + textlink + ')\n';
-        var t = cursor.insertText(toctextline);
-        t.setFontSize(10);
-        t.setForegroundColor("#333333");
-        t.setBold(false);
-        t.setFontFamily("Consolas");
-        var position = document.newPosition(t, toctextline.length);
-        document.setCursor(position);
-      } else if (headerlevel == 3) {
-        toctextline = tocindentstyle[3] + '[' + text + '](#' + textlink + ')\n';
-        var t = cursor.insertText(toctextline);
-        t.setFontSize(10);
-        t.setForegroundColor("#333333");
-        t.setBold(false);
-        t.setFontFamily("Consolas");
-        var position = document.newPosition(t, toctextline.length);
-        document.setCursor(position);
-      } else if (headerlevel == 4) {
-        toctextline = tocindentstyle[4] + '[' + text + '](#' + textlink + ')\n';
-        var t = cursor.insertText(toctextline);
-        t.setFontSize(10);
-        t.setForegroundColor("#333333");
-        t.setBold(false);
-        t.setFontFamily("Consolas");
-        var position = document.newPosition(t, toctextline.length);
-        document.setCursor(position);
-      } else if (headerlevel == 5) {
-        toctextline = tocindentstyle[5] + '[' + text + '](#' + textlink + ')\n';
-        var t = cursor.insertText(toctextline);
-        t.setFontSize(10);
-        t.setForegroundColor("#333333");
-        t.setBold(false);
-        t.setFontFamily("Consolas");
-        var position = document.newPosition(t, toctextline.length);
-        document.setCursor(position);
-      } else if (headerlevel == 6) {
-        toctextline = tocindentstyle[6] + '[' + text + '](#' + textlink + ')\n';
-        var t = cursor.insertText(toctextline);
-        t.setFontSize(10);
-        t.setForegroundColor("#333333");
-        t.setBold(false);
-        t.setFontFamily("Consolas");
-        var position = document.newPosition(t, toctextline.length);
-        document.setCursor(position);
-      }
-    }
+ 
+    var toctextline = tocindentstyle[headerlevel] + '[' + text + '](#' + textlink + ')';
+ 
+    var tocPara = body.insertParagraph(insertIndex, toctextline);
+    tocPara.setHeading(DocumentApp.ParagraphHeading.NORMAL);
+    tocPara.setFontSize(10);
+    tocPara.setForegroundColor("#333333");
+    tocPara.setBold(false);
+    tocPara.setFontFamily("Consolas");
+ 
+    // Link just the visible text between [ and ]
+    var linkStart = tocindentstyle[headerlevel].length + 1;
+    var linkEnd   = linkStart + text.length - 1;
+    tocPara.editAsText().setLinkUrl(linkStart, linkEnd, '#' + textlink);
+ 
+    insertIndex++;
   }
 }
-
-
-
+ 
+ 
 // --------------------------------------------------------------------------------
-// Supporting functions 
+// Supporting functions
 // --------------------------------------------------------------------------------
-
-// Convert integer to lower case letter
-function int2lower(num){
-  if ( (num < 1) || (num > 27) ) { num = 45 - 96; }
-  return String.fromCharCode(96+num); 
+ 
+function int2lower(num) {
+  if ((num < 1) || (num > 26)) { num = 45 - 96; }
+  return String.fromCharCode(96 + num);
 }
-
-// Convert integer to upper case letter
-function int2upper(num){
-  if ( (num < 1) || (num > 27) ) { num = 45 - 64; }
-  return String.fromCharCode(64+num); 
+ 
+function int2upper(num) {
+  if ((num < 1) || (num > 26)) { num = 45 - 64; }
+  return String.fromCharCode(64 + num);
 }
-
